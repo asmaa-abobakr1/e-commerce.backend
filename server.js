@@ -3,7 +3,7 @@ const cors = require('cors');
 const dotenv = require('dotenv');
 const connectDB = require('./config/db.config');
 const AppError = require('./utilites/appError.uti');
-const globalErrorHandler = require('./middlewares/errorHandlar.middleware');
+const globalErrorHandler = require('./middelwares/errorHandlar.middleware');
 
 dotenv.config();
 
