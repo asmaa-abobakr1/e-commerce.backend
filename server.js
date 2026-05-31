@@ -14,7 +14,7 @@ const app = express();
 
 
 app.use(cors({
-  origin: ['https://e-commerce-backend-five-lilac.vercel.app', 'http://localhost:4200'],
+  origin: ['https://asmaae-commerce.vercel.app/', 'http://localhost:4200'], 
   credentials: true
 }));
 
