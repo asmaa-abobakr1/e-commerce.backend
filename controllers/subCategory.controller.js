@@ -1,4 +1,4 @@
-const SubCategory = require('../models/subcategory.model');
+const SubCategory = require('../models/subCategory.model');
 const AppError = require('../utilites/appError.uti');
 
 exports.getAllSubCategories = async (req, res, next) => {
