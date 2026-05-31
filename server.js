@@ -34,7 +34,9 @@ app.use('/api/v1/messages', require('./routes/message.route'));
 app.use((req, res, next) => {
   next(new AppError(`Can't find ${req.originalUrl} on this server!`, 404));
 });
-
+app.get('/', (req, res) => {
+    res.send('Server is running successfully!');
+});
 
 app.use(globalErrorHandler);
 
