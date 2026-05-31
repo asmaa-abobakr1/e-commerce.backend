@@ -140,6 +140,8 @@ exports.requestRefund = async (req, res, next) => {
 exports.approveRefund = async (req, res, next) => {
   try {
     const order = await Order.findById(req.params.id);
+    if (!order) return next(new AppError('Order not found', 404)); // حماية إضافية
+
     if (req.body.approved) {
       order.refundStatus = 'approved';
       for (const item of order.products) {
@@ -148,8 +150,10 @@ exports.approveRefund = async (req, res, next) => {
     } else {
       order.refundStatus = 'rejected';
     }
-    await order.save();
-    res.status(200).json({ status: 'success', data: { order } });
+    
+    const updatedOrder = await order.save(); // حفظ الأوردر المحدث في متغير
+
+    res.status(200).json({ status: 'success', data: { order: updatedOrder } }); // إرسال الأوردر المحدث
   } catch (err) { next(err); }
 };
 

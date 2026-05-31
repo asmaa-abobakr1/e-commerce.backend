@@ -1,15 +1,27 @@
 const Order = require('../models/order.model');
+const AppError = require('../utilites/appError.uti');
 
 exports.getSalesReport = async (req, res, next) => {
   try {
-    const { startDate, endDate } = req.query;
+    let { startDate, endDate } = req.query;
     
+    // 1. تأمين التواريخ لو متبعتتش (الافتراضي: آخر 30 يوم)
+    if (!startDate) {
+      const defaultStart = new Date();
+      defaultStart.setDate(defaultStart.getDate() - 30);
+      startDate = defaultStart.toISOString();
+    }
+    if (!endDate) {
+      endDate = new Date().toISOString();
+    }
+
+    // 2. تجميع كل حالات الإلغاء والرفض لضمان دقة الأرباح
     const filter = {
       orderAt: {
         $gte: new Date(startDate),
         $lte: new Date(endDate)
       },
-      status: { $nin: ['cancelbyuser', 'canceledbyadmin'] } 
+      status: { $nin: ['cancelbyuser', 'cancelbyadmin', 'canceledbyadmin', 'refused'] } 
     };
 
     const stats = await Order.aggregate([
@@ -39,7 +51,8 @@ exports.getSalesReport = async (req, res, next) => {
     res.status(200).json({
       status: 'success',
       data: {
-        summary: stats[0] || { totalRevenue: 0, totalOrders: 0 },
+        // 3. تأمين الـ Summary بالكامل في حال عدم وجود مبيعات
+        summary: stats[0] || { totalRevenue: 0, totalOrders: 0, avgOrderValue: 0 },
         dailyStats
       }
     });

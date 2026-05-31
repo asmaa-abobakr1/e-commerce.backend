@@ -1,5 +1,13 @@
 const User = require('../models/user.model');
 const AppError = require('../utilites/appError.uti');
+const cloudinary = require('cloudinary').v2;
+
+// إعدادات Cloudinary لتقرأ من الـ Environment Variables في Vercel
+cloudinary.config({
+  cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
+  api_key: process.env.CLOUDINARY_API_KEY,
+  api_secret: process.env.CLOUDINARY_API_SECRET
+});
 
 const normalizeCart = (cart = []) => {
   if (!Array.isArray(cart)) return [];
@@ -24,7 +32,6 @@ exports.getMe = async (req, res, next) => {
     const user = await User.findById(req.user.id).populate('cart.product');
     console.log('User found:', !!user);
     if (!user) return next(new AppError('No user found with that ID', 404));
-    
     
     let isChanged = false;
     user.cart = user.cart.filter(item => {
@@ -52,10 +59,18 @@ exports.getMe = async (req, res, next) => {
 
 exports.updateMe = async (req, res, next) => {
   try {
-    
     const filteredBody = { ...req.body };
     delete filteredBody.password;
     delete filteredBody.role;
+
+    // لو المستخدم بيحدث صورة البروفايل بتاعته
+    if (req.file) {
+      const result = await cloudinary.uploader.upload(req.file.path, {
+        folder: 'youth_fashion_users'
+      });
+      // تأكدي لو اسم الفيلد في الـ Schema عندك هو avatar أو img وعدليه هنا
+      filteredBody.avatar = result.secure_url; 
+    }
 
     const updatedUser = await User.findByIdAndUpdate(req.user.id, filteredBody, {
       returnDocument: 'after',
@@ -70,7 +85,6 @@ exports.addAddress = async (req, res, next) => {
   try {
     const user = await User.findById(req.user.id);
     user.addresses.push(req.body);
-    
     
     if (user.addresses.length === 1) {
       user.addresses[0].isDefault = true;
@@ -122,7 +136,6 @@ exports.deleteUser = async (req, res, next) => {
   } catch (err) { next(err); }
 };
 
-
 exports.getAllUsers = async (req, res, next) => {
   try {
     const users = await User.find().sort('-createdAt');
@@ -140,6 +153,14 @@ exports.getUser = async (req, res, next) => {
 
 exports.createUser = async (req, res, next) => {
   try {
+    // لو الأدمن بيكريت مستخدم جديد بصورة
+    if (req.file) {
+      const result = await cloudinary.uploader.upload(req.file.path, {
+        folder: 'youth_fashion_users'
+      });
+      req.body.avatar = result.secure_url;
+    }
+
     const newUser = await User.create(req.body);
     res.status(201).json({ status: 'success', data: { user: newUser } });
   } catch (err) { next(err); }
@@ -147,6 +168,14 @@ exports.createUser = async (req, res, next) => {
 
 exports.updateUser = async (req, res, next) => {
   try {
+    // لو الأدمن بيعدل صورة المستخدم
+    if (req.file) {
+      const result = await cloudinary.uploader.upload(req.file.path, {
+        folder: 'youth_fashion_users'
+      });
+      req.body.avatar = result.secure_url;
+    }
+
     const user = await User.findByIdAndUpdate(req.params.id, req.body, {
       returnDocument: 'after',
       runValidators: true

@@ -25,7 +25,8 @@ exports.getSalesReport = async (req, res) => {
 
     const filter = {
       orderAt: { $gte: start, $lte: end },
-      status: { $nin: ['cancelbyuser', 'canceledbyadmin'] },
+      // تعديل هنا: ضفنا كل حالات الإلغاء والرفض الممكنة عشان التقارير المالية تطلع مظبوطة
+      status: { $nin: ['cancelbyuser', 'cancelbyadmin', 'canceledbyadmin', 'refused'] },
       isDeleted: { $ne: true }
     };
 

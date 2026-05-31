@@ -1,5 +1,13 @@
 const Product = require('../models/product.model');
 const AppError = require('../utilites/appError.uti');
+const cloudinary = require('cloudinary').v2;
+
+// إعدادات Cloudinary لتقرأ من الـ Environment Variables اللي ضفتيها
+cloudinary.config({
+  cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
+  api_key: process.env.CLOUDINARY_API_KEY,
+  api_secret: process.env.CLOUDINARY_API_SECRET
+});
 
 exports.getAllProducts = async (req, res, next) => {
   try {
@@ -81,9 +89,14 @@ exports.getProduct = async (req, res, next) => {
 
 exports.createProduct = async (req, res, next) => {
   try {
+    // لو فيه صورة مبعوتة، هنرفعها على Cloudinary مباشرة ونأخذ الرابط الأونلاين بتاعها
     if (req.file) {
-      req.body.img = `${req.protocol}://${req.get('host')}/uploads/${req.file.filename}`;
+      const result = await cloudinary.uploader.upload(req.file.path, {
+        folder: 'youth_fashion_products' // اسم الفولدر اللي هيتعمل في Cloudinary
+      });
+      req.body.img = result.secure_url; // اللينك الأونلاين المباشر اللي بيبدأ بـ https
     }
+    
     const newProduct = await Product.create(req.body);
     res.status(201).json({ status: 'success', data: { product: newProduct } });
   } catch (err) { next(err); }
@@ -92,8 +105,12 @@ exports.createProduct = async (req, res, next) => {
 exports.updateProduct = async (req, res, next) => {
   try {
     if (req.file) {
-      req.body.img = `${req.protocol}://${req.get('host')}/uploads/${req.file.filename}`;
+      const result = await cloudinary.uploader.upload(req.file.path, {
+        folder: 'youth_fashion_products'
+      });
+      req.body.img = result.secure_url;
     }
+    
     const product = await Product.findByIdAndUpdate(req.params.id, req.body, {
       returnDocument: 'after',
       runValidators: true
