@@ -35,7 +35,7 @@ app.use((req, res, next) => {
   next(new AppError(`Can't find ${req.originalUrl} on this server!`, 404));
 });
 app.get('/', (req, res) => {
-    res.send('Server is running successfully!');
+  res.json({ message: "API is running" });
 });
 
 app.use(globalErrorHandler);
