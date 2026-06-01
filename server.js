@@ -7,20 +7,22 @@ const globalErrorHandler = require('./middelwares/errorHandlar.middleware');
 
 dotenv.config();
 
-
 connectDB();
 
 const app = express();
 
-
+// 1. تحديث إعدادات CORS لتكون أكثر دقة
 app.use(cors({
-  origin: '*', 
-  credentials: true
+  origin: 'https://asmaae-commerce.vercel.app', // ضعي رابط موقعكِ هنا
+  credentials: true,
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization']
 }));
 
 app.use(express.json());
-app.use('/uploads', express.static('uploads'));
 
+// 2. إزالة السطر الخاص بالـ uploads محلياً (لأنه سيسبب خطأ على Vercel)
+// إذا احتجتِ لرفع صور، يجب الاعتماد كلياً على Cloudinary
 
 app.use('/api/v1/auth', require('./routes/auth.route'));
 app.use('/api/v1/users', require('./routes/user.route'));
@@ -34,20 +36,15 @@ app.use('/api/v1/reports', require('./routes/report.route'));
 app.use('/api/v1/settings', require('./routes/settings.route'));
 app.use('/api/v1/messages', require('./routes/message.route'));
 
-
-app.use((req, res, next) => {
-  next(new AppError(`Can't find ${req.originalUrl} on this server!`, 404));
-});
 app.get('/', (req, res) => {
   res.json({ message: "API is running" });
 });
 
+app.use((req, res, next) => {
+  next(new AppError(`Can't find ${req.originalUrl} on this server!`, 404));
+});
+
 app.use(globalErrorHandler);
 
-if (process.env.NODE_ENV !== 'production') {
-  const PORT = process.env.PORT || 5000;
-  app.listen(PORT, () => {
-    console.log(`Server running in ${process.env.NODE_ENV} mode on port ${PORT}`);
-  });
-}
+// لا تحتاجي لـ app.listen على Vercel، فالسيرفر يعمل أوتوماتيكياً
 module.exports = app;
