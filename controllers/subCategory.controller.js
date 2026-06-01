@@ -50,7 +50,7 @@ exports.updateSubCategory = async (req, res, next) => {
 
 exports.deleteSubCategory = async (req, res, next) => {
   try {
-    await SubCategory.findByIdAndUpdate(req.params.id, { isDeleted: true });
+    await SubCategory.findByIdAndDelete(req.params.id);
     res.status(204).json({ status: 'success', data: null });
   } catch (err) { next(err); }
 };
