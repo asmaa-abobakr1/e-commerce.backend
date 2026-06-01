@@ -11,11 +11,26 @@ connectDB();
 
 const app = express();
 
-// 1. تحديث إعدادات CORS لتكون أكثر دقة
+// 1. تحديث إعدادات CORS لتكون أكثر دقة وتدعم التطوير المحلي والإنتاج
+const allowedOrigins = [
+  'https://asmaae-commerce.vercel.app',
+  'http://localhost:4200',
+  'http://localhost:5000',
+  process.env.ALLOWED_ORIGIN
+].filter(Boolean).map(o => o.replace(/\/$/, ''));
+
 app.use(cors({
-  origin: 'https://asmaae-commerce.vercel.app', // ضعي رابط موقعكِ هنا
+  origin: (origin, callback) => {
+    if (!origin) return callback(null, true);
+    const cleanedOrigin = origin.replace(/\/$/, '');
+    if (allowedOrigins.includes(cleanedOrigin) || process.env.NODE_ENV === 'development') {
+      callback(null, true);
+    } else {
+      callback(new Error('Not allowed by CORS'));
+    }
+  },
   credentials: true,
-  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization']
 }));
 

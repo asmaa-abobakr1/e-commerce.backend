@@ -130,8 +130,17 @@ exports.updateCart = async (req, res, next) => {
 
 exports.deleteUser = async (req, res, next) => {
   try {
+    const userToDelete = await User.findById(req.params.id);
+    if (!userToDelete) return next(new AppError('No user found with that ID', 404));
+
+    if (userToDelete.role === 'admin') {
+      const adminCount = await User.countDocuments({ role: 'admin', isDeleted: { $ne: true } });
+      if (adminCount <= 1) {
+        return next(new AppError('Cannot delete the last admin. There must be at least one admin in the system.', 400));
+      }
+    }
+
     const user = await User.findByIdAndUpdate(req.params.id, { isDeleted: true });
-    if (!user) return next(new AppError('No user found with that ID', 404));
     res.status(204).json({ status: 'success', data: null });
   } catch (err) { next(err); }
 };
@@ -168,6 +177,17 @@ exports.createUser = async (req, res, next) => {
 
 exports.updateUser = async (req, res, next) => {
   try {
+    // التأكد من وجود أدمن واحد على الأقل في حال محاولة تغيير الدور إلى مستخدم عادي
+    if (req.body.role === 'user') {
+      const userToUpdate = await User.findById(req.params.id);
+      if (userToUpdate && userToUpdate.role === 'admin') {
+        const adminCount = await User.countDocuments({ role: 'admin', isDeleted: { $ne: true } });
+        if (adminCount <= 1) {
+          return next(new AppError('Cannot demote the last admin. There must be at least one admin in the system.', 400));
+        }
+      }
+    }
+
     // لو الأدمن بيعدل صورة المستخدم
     if (req.file) {
       const result = await cloudinary.uploader.upload(req.file.path, {
